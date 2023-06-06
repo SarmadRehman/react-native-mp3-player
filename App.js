@@ -43,6 +43,13 @@ const MusicPlayer = () => {
           maximumTrackTintColor="#fff"
           onSlidingComplete={() => {}}
         />
+
+        {/*music progress duration */}
+
+        <View style={style.progresslevelduration}>
+          <Text style={style.progresslabeltext}>00:00</Text>
+          <Text style={style.progresslabeltext}>00:00</Text>
+        </View>
       </View>
       {/*icons are going here*/}
       <View style={style.bottomcontainer}>
@@ -136,5 +143,14 @@ const style = StyleSheet.create({
     height: 40,
     marginTop: 25,
     flexDirection: "row",
+  },
+  progresslevelduration: {
+    width: 340,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  progresslabeltext: {
+    color: "#fff",
+    fontWeight: "500",
   },
 });
