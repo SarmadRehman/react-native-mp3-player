@@ -6,69 +6,87 @@ import {
   TouchableOpacity,
   Dimensions,
   Image,
+  FlatList,
 } from "react-native";
-
+import songs from "../model/data";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Slider from "@react-native-community/slider";
 const { width, height } = Dimensions.get("window");
 
 const MusicPlayer = () => {
-  return (
-    <SafeAreaView style={style.container}>
-      <View style={style.maincontainer}>
-        {/*  image */}
+  const renderSongs = ({ item, index }) => {
+    return (
+      <View style={style.mainimagewrapper}>
         <View style={[style.imageWrapper, style.elevation]}>
           <Image
-            source={require("../assets/img/img1.jpg")}
+            //   source={item.artwork}
+            source={item.artwork}
             style={style.MusicImg}
           />
         </View>
       </View>
+    );
+  };
 
-      {/*Song Content*/}
-      <View style={style.songview}>
-        <Text style={[style.songcontent, style.songtitle]}>some title</Text>
-        <Text style={[style.songcontent, style.songartist]}>some artist</Text>
-      </View>
-
-      {/*Slider */}
-      <View>
-        <Slider
-          style={style.progressBar}
-          value={10}
-          minimumValue={0}
-          maximumValue={100}
-          thumbTintColor="#FFD369"
-          minimumTrackTintColor="#FFD369"
-          maximumTrackTintColor="#fff"
-          onSlidingComplete={() => {}}
+  return (
+    <SafeAreaView style={style.container}>
+      <View style={style.maincontainer}>
+        {/*  image */}
+        <FlatList
+          renderItem={renderSongs}
+          data={songs}
+          keyExtractor={(item) => item.id}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={() => {}}
         />
+        {/**pick */}
 
-        {/*music progress duration */}
-
-        <View style={style.progresslevelduration}>
-          <Text style={style.progresslabeltext}>00:00</Text>
-          <Text style={style.progresslabeltext}>00:00</Text>
+        {/*Song Content*/}
+        <View style={style.songview}>
+          <Text style={[style.songcontent, style.songtitle]}>some title</Text>
+          <Text style={[style.songcontent, style.songartist]}>some artist</Text>
         </View>
-      </View>
-      {/*music controls */}
-      <View style={style.musiccontrolscontainer}>
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="play-skip-back-outline" size={35} color="#FFD369" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="ios-pause-circle" size={75} color="#FFD369" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons
-            name="play-skip-forward-outline"
-            size={35}
-            color="#FFD369"
+
+        {/*Slider */}
+        <View>
+          <Slider
+            style={style.progressBar}
+            value={10}
+            minimumValue={0}
+            maximumValue={100}
+            thumbTintColor="#FFD369"
+            minimumTrackTintColor="#FFD369"
+            maximumTrackTintColor="#fff"
+            onSlidingComplete={() => {}}
           />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="heart-outline" size={30} color="#888888" />
-        </TouchableOpacity>
+
+          {/*music progress duration */}
+
+          <View style={style.progresslevelduration}>
+            <Text style={style.progresslabeltext}>00:00</Text>
+            <Text style={style.progresslabeltext}>00:00</Text>
+          </View>
+        </View>
+
+        {/*music controls */}
+        <View style={style.musiccontrolscontainer}>
+          <TouchableOpacity onPress={() => {}}>
+            <Ionicons name="play-skip-back-outline" size={35} color="#FFD369" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => {}}>
+            <Ionicons name="ios-pause-circle" size={75} color="#FFD369" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => {}}>
+            <Ionicons
+              name="play-skip-forward-outline"
+              size={35}
+              color="#FFD369"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/*icons are going here*/}
@@ -121,10 +139,16 @@ const style = StyleSheet.create({
     justifyContent: "space-between",
     width: "80%",
   },
+  mainimagewrapper: {
+    width: width,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   imageWrapper: {
     width: 300,
     height: 340,
-    marginBottom: 25,
+    marginBottom: 20,
+    marginTop: 20,
   },
   MusicImg: {
     width: "100%",
@@ -177,7 +201,7 @@ const style = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 15,
+    marginTop: 10,
     width: "60%",
   },
 });
