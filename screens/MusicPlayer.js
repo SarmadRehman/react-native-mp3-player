@@ -1,3 +1,4 @@
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +8,7 @@ import {
   Dimensions,
   Image,
   FlatList,
+  Animated,
 } from "react-native";
 import songs from "../model/data";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -14,9 +16,21 @@ import Slider from "@react-native-community/slider";
 const { width, height } = Dimensions.get("window");
 
 const MusicPlayer = () => {
+  const [songIndex, setsongIndex] = useState(0);
+  const ScrollX = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    ScrollX.addListener(({ value }) => {
+      //console.log("ScrollX : ${value} | Device Width : ${width }");
+      const index = Math.round(value / width);
+      setsongIndex(index);
+      //console.log(index);
+    });
+  }, []);
+
   const renderSongs = ({ item, index }) => {
     return (
-      <View style={style.mainimagewrapper}>
+      <Animated.View style={style.mainimagewrapper}>
         <View style={[style.imageWrapper, style.elevation]}>
           <Image
             //   source={item.artwork}
@@ -24,15 +38,19 @@ const MusicPlayer = () => {
             style={style.MusicImg}
           />
         </View>
-      </View>
+      </Animated.View>
     );
   };
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { x: ScrollX } } }],
+    { useNativeDriver: true }
+  );
 
   return (
     <SafeAreaView style={style.container}>
       <View style={style.maincontainer}>
         {/*  image */}
-        <FlatList
+        <Animated.FlatList
           renderItem={renderSongs}
           data={songs}
           keyExtractor={(item) => item.id}
@@ -40,13 +58,26 @@ const MusicPlayer = () => {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           scrollEventThrottle={16}
-          onScroll={() => {}}
+          //onScroll={handleScroll}
+
+          onScroll={Animated.event(
+            [
+              {
+                nativeEvent: {
+                  contentOffset: { x: ScrollX },
+                },
+              },
+            ],
+            { useNativeDriver: true }
+          )}
         />
         {/**pick */}
 
         {/*Song Content*/}
         <View style={style.songview}>
-          <Text style={[style.songcontent, style.songtitle]}>some title</Text>
+          <Text style={[style.songcontent, style.songtitle]}>
+            {songs[songIndex].title}
+          </Text>
           <Text style={[style.songcontent, style.songartist]}>some artist</Text>
         </View>
 
@@ -71,13 +102,16 @@ const MusicPlayer = () => {
           </View>
         </View>
 
-        {/*music controls */}
+        {/* mymusic controls */}
         <View style={style.musiccontrolscontainer}>
           <TouchableOpacity onPress={() => {}}>
             <Ionicons name="play-skip-back-outline" size={35} color="#FFD369" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => {}}>
-            <Ionicons name="ios-pause-circle" size={75} color="#FFD369" />
+            <Ionicons name="ios-pause-circle" size={35} color="#FFD369" />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <ion-icon name="caret-forward-outline" size={35} color="#FFD369" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => {}}>
             <Ionicons
@@ -199,9 +233,9 @@ const style = StyleSheet.create({
   },
   musiccontrolscontainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 15,
     width: "60%",
   },
 });
