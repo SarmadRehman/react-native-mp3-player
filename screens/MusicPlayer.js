@@ -10,23 +10,131 @@ import {
   FlatList,
   Animated,
 } from "react-native";
+
+import TrackPlayer, {
+  Capability,
+  Event,
+  RepeatMode,
+  State,
+  usePlaybackState,
+  useProgress,
+  useTrackPlayerEvents,
+} from "react-native-track-player";
 import songs from "../model/data";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import Slider from "@react-native-community/slider";
 const { width, height } = Dimensions.get("window");
 
+const setupPlayer = async () => {
+  try {
+    await TrackPlayer.setupPlayer();
+    await TrackPlayer.updateOptions({
+      capabilities: [
+        Capability.Play,
+        Capability.Pause,
+        Capability.SkipToNext,
+        Capability.SkipToPrevious,
+        Capability.Stop,
+      ],
+    });
+    await TrackPlayer.add(songs);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const togglePlayBack = async (playBackState) => {
+  const currentTrack = await TrackPlayer.getCurrentTrack();
+  console.log(currentTrack, playBackState, State.Playing);
+  if (currentTrack != null) {
+    if (playBackState == State.Paused) {
+      await TrackPlayer.play();
+    } else {
+      await TrackPlayer.pause();
+    }
+  }
+};
+
 const MusicPlayer = () => {
+  const playBackState = usePlaybackState();
+  const progress = useProgress();
   const [songIndex, setsongIndex] = useState(0);
+
+  const [repeatMode, setRepeatMode] = useState("off");
   const ScrollX = useRef(new Animated.Value(0)).current;
+  const songSlider = useRef(null);
+  const [trackTitle, setTrackTitle] = useState();
+  const [trackArtist, setTrackArtist] = useState();
+  const [trackArtwork, setTrackArtwork] = useState();
+
+  //   changing the track on complete
+  useTrackPlayerEvents([Event.PlaybackTrackChanged], async (event) => {
+    if (event.type === Event.PlaybackTrackChanged && event.nextTrack !== null) {
+      const track = await TrackPlayer.getTrack(event.nextTrack);
+      const { title, artwork, artist } = track;
+      setTrackTitle(title);
+      setTrackArtist(artist);
+      setTrackArtwork(artwork);
+    }
+  });
+
+  const repeatIcon = () => {
+    if (repeatMode == "off") {
+      return "repeat-off";
+    }
+
+    if (repeatMode == "track") {
+      return "repeat-once";
+    }
+
+    if (repeatMode == "repeat") {
+      return "repeat";
+    }
+  };
+
+  const changeRepeatMode = () => {
+    if (repeatMode == "off") {
+      TrackPlayer.setRepeatMode(RepeatMode.Track);
+      setRepeatMode("track");
+    }
+
+    if (repeatMode == "track") {
+      TrackPlayer.setRepeatMode(RepeatMode.Queue);
+      setRepeatMode("repeat");
+    }
+
+    if (repeatMode == "repeat") {
+      TrackPlayer.setRepeatMode(RepeatMode.Off);
+      setRepeatMode("off");
+    }
+  };
 
   useEffect(() => {
+    setupPlayer();
     ScrollX.addListener(({ value }) => {
       //console.log("ScrollX : ${value} | Device Width : ${width }");
       const index = Math.round(value / width);
       setsongIndex(index);
       //console.log(index);
     });
+    return () => {
+      ScrollX.removeAllListeners();
+      TrackPlayer.destroy();
+    };
   }, []);
+
+  const skipToNext = () => {
+    songSlider.current.scrollToOffset({
+      offset: (songIndex + 1) * width,
+    });
+  };
+
+  const skipToPrevious = () => {
+    songSlider.current.scrollToOffset({
+      offset: (songIndex - 1) * width,
+    });
+  };
 
   const renderSongs = ({ item, index }) => {
     return (
@@ -34,13 +142,14 @@ const MusicPlayer = () => {
         <View style={[style.imageWrapper, style.elevation]}>
           <Image
             //   source={item.artwork}
-            source={item.artwork}
+            source={trackArtwork}
             style={style.MusicImg}
           />
         </View>
       </Animated.View>
     );
   };
+
   const handleScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { x: ScrollX } } }],
     { useNativeDriver: true }
@@ -73,32 +182,53 @@ const MusicPlayer = () => {
         />
         {/**pick */}
 
-        {/*Song Content*/}
+        {/* Title & Artist Name */}
+        <View>
+          <Text style={[style.songContent, style.songTitle]}>
+            {/* {songs[songIndex].title} */ trackTitle}
+          </Text>
+          <Text style={[style.songContent, style.songArtist]}>
+            {/* {songs[songIndex].artist} */ trackArtist}
+          </Text>
+        </View>
+
+        {/* Song Content
         <View style={style.songview}>
           <Text style={[style.songcontent, style.songtitle]}>
             {songs[songIndex].title}
           </Text>
           <Text style={[style.songcontent, style.songartist]}>some artist</Text>
-        </View>
+        </View> */}
 
         {/*Slider */}
         <View>
           <Slider
             style={style.progressBar}
-            value={10}
+            value={progress.position}
             minimumValue={0}
-            maximumValue={100}
+            maximumValue={progress.duration}
             thumbTintColor="#FFD369"
             minimumTrackTintColor="#FFD369"
             maximumTrackTintColor="#fff"
-            onSlidingComplete={() => {}}
+            onSlidingComplete={async (value) => {
+              await TrackPlayer.seekTo(value);
+            }}
           />
 
           {/*music progress duration */}
 
-          <View style={style.progresslevelduration}>
-            <Text style={style.progresslabeltext}>00:00</Text>
-            <Text style={style.progresslabeltext}>00:00</Text>
+          {/* Progress Durations */}
+          <View style={style.progressLevelDuraiton}>
+            <Text style={style.progressLabelText}>
+              {new Date(progress.position * 1000)
+                .toLocaleTimeString()
+                .substring(3)}
+            </Text>
+            <Text style={style.progressLabelText}>
+              {new Date((progress.duration - progress.position) * 1000)
+                .toLocaleTimeString()
+                .substring(3)}
+            </Text>
           </View>
         </View>
 
@@ -107,8 +237,16 @@ const MusicPlayer = () => {
           <TouchableOpacity onPress={() => {}}>
             <Ionicons name="play-skip-back-outline" size={35} color="#FFD369" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => {}}>
-            <Ionicons name="ios-pause-circle" size={35} color="#FFD369" />
+          <TouchableOpacity onPress={() => togglePlayBack(playBackState)}>
+            <Ionicons
+              name={
+                playBackState === State.Playing
+                  ? "ios-pause-circle"
+                  : "ios-play-circle"
+              }
+              size={75}
+              color="#FFD369"
+            />
           </TouchableOpacity>
           <TouchableOpacity>
             <ion-icon name="caret-forward-outline" size={35} color="#FFD369" />
@@ -123,15 +261,19 @@ const MusicPlayer = () => {
         </View>
       </View>
 
-      {/*icons are going here*/}
-      <View style={style.bottomcontainer}>
-        <View style={style.bottomIconWrapper}>
+      {/* bottom section */}
+      <View style={style.bottomSection}>
+        <View style={style.bottomIconContainer}>
           <TouchableOpacity onPress={() => {}}>
             <Ionicons name="heart-outline" size={30} color="#888888" />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => {}}>
-            <Ionicons name="repeat" size={30} color="#888888" />
+          <TouchableOpacity onPress={changeRepeatMode}>
+            <MaterialCommunityIcons
+              name={`${repeatIcon()}`}
+              size={30}
+              color={repeatMode !== "off" ? "#FFD369" : "#888888"}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => {}}>
